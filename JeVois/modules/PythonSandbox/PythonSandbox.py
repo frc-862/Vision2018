@@ -71,6 +71,22 @@ class PythonSandbox:
         self.__filter_contours_min_vertices = 0.0
         self.__filter_contours_min_ratio = 0.0
         self.__filter_contours_max_ratio = 1000.0
+        
+        #Attempt to load above values from file
+        try:
+            fInit = open("vals.txt", "r")
+            if(fInit.mode == "r"):
+                valsInit = fInit.read().split('[')[1].split(',')
+                self.__hsl_threshold_hue[0] = float(valsInit[0])
+                self.__hsl_threshold_hue[1] = float(valsInit[1])
+                self.__hsl_threshold_saturation[0] = float(valsInit[2])
+                self.__hsl_threshold_saturation[1] = float(valsInit[3])
+                self.__hsl_threshold_luminance[0] = float(valsInit[4])
+                self.__hsl_threshold_luminance[1] = float(valsInit[5])
+                self.__filter_contours_min_area = float(valsInit[6])
+            fInit.close()
+        except:
+            jevois.LINFO("Error loading parameters from file")
 
         self.filter_contours_output = None
 
@@ -84,23 +100,11 @@ class PythonSandbox:
 
         self.mask_output = None
         jevois.LINFO("END CONSTRUCTOR")
-    ###################################################################################################
-    ## Process function with no USB output
-    def processNoUSB(self, inframe):
-        jevois.LINFO("NO USB")
-        #jevois.sendSerial("x: 0, y: 0, w: 0, h: 0\n")
-        #outframe = inframe
-        #process(self, inframe, outframe)
-        #jevois.sendSerial("test")
-        
-
-
     ## Process function with USB output
-    def process(self, inframe, outframe):
+    def process(self, inframe, outframe = None):
         """
         Runs the pipeline and sets all outputs to new values.
         """
-        jevois.LINFO("USB CONNECTED")
         
         self.bgr_input = inframe.getCvBGR()
         
@@ -138,34 +142,40 @@ class PythonSandbox:
         self.__convex_hulls_contours = self.filter_contours_output
         (self.convex_hulls_output) = self.__convex_hulls(self.__convex_hulls_contours)
         
-        outimg = self.bgr_input
-        
-        
-        printedData = False
-        textHeight = 22
-        for contour in self.convex_hulls_output:
-            printedData = True
-            x,y,w,h = cv2.boundingRect(contour)
-            cv2.circle(outimg, (x + int(w / 2), y + int(h / 2)), 3, (255, 0, 0), 5)
-            cv2.rectangle(outimg, (x, y), (x + w, y + h), (0, 255, 0), 3) 
-            jevois.sendSerial('x: ' + (str(x) + ', y: ' + str(y) + ', w: ' + str(w) + ', h: ' + str(h)))
-            cv2.putText(outimg, ('x: ' + str(x) + ', y: ' + str(y) + ', w: ' + str(w) + ', h: ' + str(h)), (3, 288 - textHeight), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
-            textHeight = textHeight + 15
-        if printedData:
-            jevois.sendSerial('\n')
-        cv2.drawContours(outimg, self.convex_hulls_output, -1, (0,0,255), 3)
-        cv2.putText(outimg, "Glitch CubeVision", (3, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
-                    
-        # Write frames/s info from our timer into the edge map (NOTE: does not account for output conversion time):
-        fps = self.timer.stop()
-        #height, width, channels = self.outimg.shape # if self.outimg is grayscale, change to: height, width = self.outimg.shape
-        
-        
-        cv2.putText(outimg, fps, (3, 288 - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
+        if outframe is not None:
+            outimg = self.bgr_input
+            
+            printedData = False
+            textHeight = 22
+            for contour in self.convex_hulls_output:
+                printedData = True
+                x,y,w,h = cv2.boundingRect(contour)
+                cv2.circle(outimg, (x + int(w / 2), y + int(h / 2)), 3, (255, 0, 0), 5)
+                cv2.rectangle(outimg, (x, y), (x + w, y + h), (0, 255, 0), 3) 
+                jevois.sendSerial('x: ' + (str(x) + ', y: ' + str(y) + ', w: ' + str(w) + ', h: ' + str(h)))
+                cv2.putText(outimg, ('x: ' + str(x) + ', y: ' + str(y) + ', w: ' + str(w) + ', h: ' + str(h)), (3, 288 - textHeight), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
+                textHeight = textHeight + 15
+            if printedData:
+                jevois.sendSerial('\n')
+            cv2.drawContours(outimg, self.convex_hulls_output, -1, (0,0,255), 3)
+            cv2.putText(outimg, "Glitch CubeVision", (3, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
+                        
+            # Write frames/s info from our timer into the edge map (NOTE: does not account for output conversion time):
+            fps = self.timer.stop()
+            #height, width, channels = self.outimg.shape # if self.outimg is grayscale, change to: height, width = self.outimg.shape
+            
+            
+            cv2.putText(outimg, fps, (3, 288 - 6), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
 
-        # Convert our BGR output image to video output format and send to host over USB. If your output image is not
-        # BGR, you can use sendCvGRAY(), sendCvRGB(), or sendCvRGBA() as appropriate:
-        outframe.sendCvBGR(outimg)
+            # Convert our BGR output image to video output format and send to host over USB. If your output image is not
+            # BGR, you can use sendCvGRAY(), sendCvRGB(), or sendCvRGBA() as appropriate:
+            
+            outframe.sendCvBGR(outimg)
+        
+        else:
+            for contour in self.convex_hulls_output:
+                x,y,w,h = cv2.boundingRect(contour)
+                jevois.sendSerial('x: ' + (str(x) + ', y: ' + str(y) + ', w: ' + str(w) + ', h: ' + str(h)))
         
 
     @staticmethod
