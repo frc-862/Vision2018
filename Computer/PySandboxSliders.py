@@ -17,8 +17,8 @@ hmin = 95
 hmax = 110
 smin = 100
 smax = 255
-vmin = 60
-vmax = 253
+lmin = 60
+lmax = 253
 minarea = 2000
 hslToggle = False
 
@@ -76,30 +76,27 @@ def update_smax(val):
     send_command('setSMax ' + smax)
 
 ####################################################################################################
-def update_vmin(val):
-    global vmin
-    global vmax
-    vmin = val
-    send_command('setVMin ' + vmin)
+def update_lmin(val):
+    global lmin
+    global lmax
+    lmin = val
+    send_command('setLMin ' + lmin)
     
 ####################################################################################################
-def update_vmax(val):
-    global vmin
-    global vmax
-    vmax = val
-    send_command('setVMax ' + vmax)
+def update_lmax(val):
+    global lmin
+    global lmax
+    lmax = val
+    send_command('setLMax ' + lmax)
     
 ####################################################################################################
 def update_min_area(val):
     minarea = val
-    send_command('setMinArea ' + vmax)
+    send_command('setMinArea ' + minarea)
     
 ####################################################################################################
-def toggleHSL():
-    if hslToggle == True:
-        send_command('toggleHSL t')
-    else:
-        send_command('toggleHSL f')
+def save_params():
+    send_command('saveParams' + '')
     
 ####################################################################################################
 # Main code
@@ -113,8 +110,8 @@ hmin = float(vals[0])
 hmax = float(vals[1])
 smin = float(vals[2])
 smax = float(vals[3])
-vmin = float(vals[4])
-vmax = float(vals[5])
+lmin = float(vals[4])
+lmax = float(vals[5])
 minarea = float(vals[6])
 
 master = Tk()
@@ -143,16 +140,16 @@ w8 = Scale(master, from_=0, to=255, tickinterval=15, length=600, orient=HORIZONT
 w8.set(smax)
 w8.pack()
 
-w9 = Label(master, text = "Value min")
+w9 = Label(master, text = "Luminance min")
 w9.pack()
-w10 = Scale(master, from_=0, to=255, tickinterval=15, length=600, orient=HORIZONTAL, command=update_vmin)
-w10.set(vmin)
+w10 = Scale(master, from_=0, to=255, tickinterval=15, length=600, orient=HORIZONTAL, command=update_lmin)
+w10.set(lmin)
 w10.pack()
 
-w11 = Label(master, text = "Value max")
+w11 = Label(master, text = "Luminance max")
 w11.pack()
-w12 = Scale(master, from_=0, to=255, tickinterval=15, length=600, orient=HORIZONTAL, command=update_vmax)
-w12.set(vmax)
+w12 = Scale(master, from_=0, to=255, tickinterval=15, length=600, orient=HORIZONTAL, command=update_lmax)
+w12.set(lmax)
 w12.pack()
 
 w11 = Label(master, text = "Min Area")
@@ -161,6 +158,7 @@ w12 = Scale(master, from_=1000, to=2000, tickinterval=100, length=600, orient=HO
 w12.set(minarea)
 w12.pack()
 
-w15 = Checkbutton(master, text="Show raw HSL output", variable=hslToggle, onvalue=True, offvalue=False, command=toggleHSL)
+w13 = Button(master, text="Save", command=save_params)
+w13.pack()
 
 mainloop()

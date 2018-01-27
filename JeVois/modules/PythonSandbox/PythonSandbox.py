@@ -10,6 +10,7 @@ class PythonSandbox:
     """
     ## Constructor
     def __init__(self):
+        jevois.LINFO("PythonTest Constructor")
         # Instantiate a JeVois Timer to measure our processing framerate:
         self.timer = jevois.Timer("sandbox", 100, jevois.LOG_INFO)
         """initializes all values to presets or None if need to be set
@@ -28,6 +29,7 @@ class PythonSandbox:
         self.blur_output = None
 
         self.__hsl_threshold_input = self.blur_output
+        #Original values
         self.__hsl_threshold_hue = [28.8135593220339, 35.586877323768235]
         self.__hsl_threshold_saturation = [129.1728019883664, 255.0]
         self.__hsl_threshold_luminance = [30, 255]
@@ -81,12 +83,24 @@ class PythonSandbox:
         self.__mask_mask = self.hsl_threshold_output
 
         self.mask_output = None
+        jevois.LINFO("END CONSTRUCTOR")
+    ###################################################################################################
+    ## Process function with no USB output
+    def processNoUSB(self, inframe):
+        jevois.LINFO("NO USB")
+        #jevois.sendSerial("x: 0, y: 0, w: 0, h: 0\n")
+        #outframe = inframe
+        #process(self, inframe, outframe)
+        #jevois.sendSerial("test")
+        
+
 
     ## Process function with USB output
     def process(self, inframe, outframe):
         """
         Runs the pipeline and sets all outputs to new values.
         """
+        jevois.LINFO("USB CONNECTED")
         
         self.bgr_input = inframe.getCvBGR()
         
@@ -319,6 +333,8 @@ class PythonSandbox:
             return self.setVMax(str)
         if command == 'setMinArea':
             return self.setMinArea(str)
+        if command == 'saveParams':
+            return self.saveParams()
         return 'ERR: Unknown command'
     #http://jevois.org/qa/index.php?qa=527&qa_1=updating-parameters-in-a-python-module-via-serial
     # ###################################################################################################
@@ -333,16 +349,17 @@ class PythonSandbox:
         '\nsetSMax - set maximum saturation' + 
         '\nsetLMin - set minimum luminance' + 
         '\nsetLMax - set maximum luminance' + 
-        '\nsetMinArea - set minimum area')
+        '\nsetMinArea - set minimum area' + 
+        '\nsaveParams - save current parameters to file')
     
     def getVals(self):
         return ('Hue. . . . . ' + str(self.__hsl_threshold_hue[0]) + ' - ' + str(self.__hsl_threshold_hue[1]) + 
         '\nSaturation . ' + str(self.__hsl_threshold_saturation[0]) + ' - ' + str(self.__hsl_threshold_saturation[1]) + 
-        '\nValue. . . . ' + str(self.__hsl_threshold_value[0]) + ' - ' + str(self.__hsl_threshold_value[1]) + 
+        '\nLuminance. . ' + str(self.__hsl_threshold_luminance[0]) + ' - ' + str(self.__hsl_threshold_luminance[1]) + 
         '\nMin Area . . ' + str(self.__filter_contours_min_area) + 
         '\n[' + str(self.__hsl_threshold_hue[0]) + ',' + str(self.__hsl_threshold_hue[1]) + 
         ',' + str(self.__hsl_threshold_saturation[0]) + ',' + str(self.__hsl_threshold_saturation[1]) + 
-        ',' + str(self.__hsl_threshold_value[0]) + ',' + str(self.__hsl_threshold_value[1]) + 
+        ',' + str(self.__hsl_threshold_luminance[0]) + ',' + str(self.__hsl_threshold_luminance[1]) + 
         ',' + str(self.__filter_contours_min_area) + ', ')
     
     def setHMin(self, str):
@@ -381,29 +398,40 @@ class PythonSandbox:
             return 'ERR: Value too low. Must be greater than ' + str(self.__hsl_threshold_saturation[0])
         self.__hsl_threshold_saturation[1] = float(arg)
         return 'Saturation max set to ' + arg
-    def setVMin(self, str):
+    def setLMin(self, str):
         arg = ''
         arg = str.split(' ', 1)[1]
         if float(arg) < 0:
             return 'ERR: Value too low. Must be at least 0.'
         if float(arg) > self.__hsl_threshold_value[1]:
-            return 'ERR: Value too high. Must be below ' + str(self.__hsl_threshold_value[1])
-        self.__hsl_threshold_value[0] = float(arg)
+            return 'ERR: Value too high. Must be below ' + str(self.__hsl_threshold_luminance[1])
+        self.__hsl_threshold_luminance[0] = float(arg)
         return 'Value min set to ' + arg
-    def setVMax(self, str):
+    def setLMax(self, str):
         arg = ''
         arg = str.split(' ', 1)[1]
         if float(arg) > 255:
             return 'ERR: Value too high. Must be below 255'
-        if float(arg) < self.__hsl_threshold_value[0]:
-            return 'ERR: Value too low. Must be greater than ' + str(self.__hsl_threshold_value[0])
-        self.__hsl_threshold_value[1] = float(arg)
+        if float(arg) < self.__hsl_threshold_luminance[0]:
+            return 'ERR: Value too low. Must be greater than ' + str(self.__hsl_threshold_luminance[0])
+        self.__hsl_threshold_luminance[1] = float(arg)
         return 'Value max set to ' + arg
     def setMinArea(self, str):
         arg = ''
         arg = str.split(' ', 1)[1]
         self.__filter_contours_min_area = float(arg)
         return 'Min area set to ' + arg
+    def saveParams(self):
+        f = open("vals.txt", "w+")
+        f.write("h: " + str(self.__hsl_threshold_hue[0]) + "-" + str(self.__hsl_threshold_hue[1]) + "\r\n")
+        f.write("s: " + str(self.__hsl_threshold_saturation[0]) + "-" + str(self.__hsl_threshold_saturation[1]) + "\r\n")
+        f.write("l: " + str(self.__hsl_threshold_luminance[0]) + "-" + str(self.__hsl_threshold_luminance[1]) + "\r\n")
+        f.write("[" + str(self.__hsl_threshold_hue[0]) + "," + str(self.__hsl_threshold_hue[1]) + 
+        "," + str(self.__hsl_threshold_saturation[0]) + "," + str(self.__hsl_threshold_saturation[1]) + 
+        "," + str(self.__hsl_threshold_luminance[0]) + "," + str(self.__hsl_threshold_luminance[1]) + 
+        "," + str(self.__filter_contours_min_area) + ",\r\n")
+        f.close()
+        return 'Saved parameters'
 
 
 BlurType = Enum('BlurType', 'Box_Blur Gaussian_Blur Median_Filter Bilateral_Filter')
