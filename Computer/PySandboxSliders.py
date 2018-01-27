@@ -99,6 +99,14 @@ def save_params():
     send_command('saveParams' + '')
     
 ####################################################################################################
+def streamon():
+    send_command('streamon' + '')
+    
+####################################################################################################
+def streamoff():
+    send_command('streamoff' + '')
+    
+####################################################################################################
 # Main code
 ser = serial.Serial(serdev, 115200, timeout=1)
 #send_command('ping')                   # should return ALIVE
@@ -160,5 +168,9 @@ w12.pack()
 
 w13 = Button(master, text="Save", command=save_params)
 w13.pack()
+w14 = Button(master, text="Stream on", command=streamon)
+w14.pack()
+w15 = Button(master, text="Stream off", command=streamoff)
+w15.pack()
 
 mainloop()

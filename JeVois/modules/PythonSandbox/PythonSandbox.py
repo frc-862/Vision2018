@@ -29,6 +29,7 @@ class PythonSandbox:
         self.blur_output = None
 
         self.__hsl_threshold_input = self.blur_output
+        
         #Original values
         self.__hsl_threshold_hue = [28.8135593220339, 35.586877323768235]
         self.__hsl_threshold_saturation = [129.1728019883664, 255.0]
@@ -94,6 +95,7 @@ class PythonSandbox:
 
         self.convex_hulls_output = None
         self.convex_hulls_filled = None
+        self.frame = 0
 
         self.__mask_input = self.resize_image_output
         self.__mask_mask = self.hsl_threshold_output
@@ -105,7 +107,6 @@ class PythonSandbox:
         """
         Runs the pipeline and sets all outputs to new values.
         """
-        
         self.bgr_input = inframe.getCvBGR()
         
         # Step Resize_Image0:
@@ -142,26 +143,33 @@ class PythonSandbox:
         self.__convex_hulls_contours = self.filter_contours_output
         (self.convex_hulls_output) = self.__convex_hulls(self.__convex_hulls_contours)
         
+        fps = self.timer.stop()
+        numobjects = 0
+        for true in self.convex_hulls_output:
+            numobjects += 1
+        jevois.sendSerial('Frame:' + str(self.frame) + str(self.frame) + ', Process Time:' + str(fps) + ', ' + str(numobjects) + ' objects')
         if outframe is not None:
             outimg = self.bgr_input
             
             printedData = False
             textHeight = 22
+            i = 0
             for contour in self.convex_hulls_output:
                 printedData = True
                 x,y,w,h = cv2.boundingRect(contour)
                 cv2.circle(outimg, (x + int(w / 2), y + int(h / 2)), 3, (255, 0, 0), 5)
                 cv2.rectangle(outimg, (x, y), (x + w, y + h), (0, 255, 0), 3) 
-                jevois.sendSerial('x: ' + (str(x) + ', y: ' + str(y) + ', w: ' + str(w) + ', h: ' + str(h)))
-                cv2.putText(outimg, ('x: ' + str(x) + ', y: ' + str(y) + ', w: ' + str(w) + ', h: ' + str(h)), (3, 288 - textHeight), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
+                jevois.sendSerial('Object:' + str(i) + '[x:' + (str(x + int(w / 2)) + ',y:' + str(y + int(h / 2)) + ',w:' + str(w) + ',h:' + str(h)))
+                cv2.putText(outimg, ('x: ' + str(x + int(w / 2)) + ', y: ' + str(y + int(h / 2)) + ', w: ' + str(w) + ', h: ' + str(h)), (3, 288 - textHeight), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
                 textHeight = textHeight + 15
+                i += 1
             if printedData:
                 jevois.sendSerial('\n')
             cv2.drawContours(outimg, self.convex_hulls_output, -1, (0,0,255), 3)
             cv2.putText(outimg, "Glitch CubeVision", (3, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
                         
             # Write frames/s info from our timer into the edge map (NOTE: does not account for output conversion time):
-            fps = self.timer.stop()
+            
             #height, width, channels = self.outimg.shape # if self.outimg is grayscale, change to: height, width = self.outimg.shape
             
             
@@ -173,10 +181,12 @@ class PythonSandbox:
             outframe.sendCvBGR(outimg)
         
         else:
+            i = 0
             for contour in self.convex_hulls_output:
                 x,y,w,h = cv2.boundingRect(contour)
-                jevois.sendSerial('x: ' + (str(x) + ', y: ' + str(y) + ', w: ' + str(w) + ', h: ' + str(h)))
-        
+                jevois.sendSerial('Object:' + str(i) + '[x:' + str(x + int(w / 2)) + ',y:' + str(y + int(h / 2)) + ',w:' + str(w) + ',h:' + str(h))
+                i += 1
+        self.frame += 1
 
     @staticmethod
     def __blur(src, type, radius):
