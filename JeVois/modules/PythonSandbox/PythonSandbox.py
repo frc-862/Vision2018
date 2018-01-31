@@ -147,7 +147,7 @@ class PythonSandbox:
         numobjects = 0
         for true in self.convex_hulls_output:
             numobjects += 1
-        jevois.sendSerial('Frame:' + str(self.frame) + str(self.frame) + ', Process Time:' + str(fps) + ', ' + str(numobjects) + ' objects')
+        jevois.sendSerial('Frame:' + str(self.frame) + str(self.frame) + ', Process Time:' + str(fps) + ', Objects:' + str(numobjects))
         if outframe is not None:
             outimg = self.bgr_input
             
