@@ -147,7 +147,7 @@ class PythonSandbox:
         numobjects = 0
         for true in self.convex_hulls_output:
             numobjects += 1
-        jevois.sendSerial('Frame:' + str(self.frame) + str(self.frame) + ', Process Time:' + str(fps) + ', Objects:' + str(numobjects))
+        serialMessage = ('Frame:' + str(self.frame) + str(self.frame) + ', Process Time:' + str(fps) + ', Objects:' + str(numobjects) + '=')
         if outframe is not None:
             outimg = self.bgr_input
             
@@ -159,12 +159,11 @@ class PythonSandbox:
                 x,y,w,h = cv2.boundingRect(contour)
                 cv2.circle(outimg, (x + int(w / 2), y + int(h / 2)), 3, (255, 0, 0), 5)
                 cv2.rectangle(outimg, (x, y), (x + w, y + h), (0, 255, 0), 3) 
-                jevois.sendSerial('Object:' + str(i) + '[x:' + (str(x + int(w / 2)) + ',y:' + str(y + int(h / 2)) + ',w:' + str(w) + ',h:' + str(h)))
+                serialMessage = serialMessage + ('\nObject:' + str(i) + '[x:' + (str(x + int(w / 2)) + ',y:' + str(y + int(h / 2)) + ',w:' + str(w) + ',h:' + str(h) + ']'))
                 cv2.putText(outimg, ('x: ' + str(x + int(w / 2)) + ', y: ' + str(y + int(h / 2)) + ', w: ' + str(w) + ', h: ' + str(h)), (3, 288 - textHeight), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
                 textHeight = textHeight + 15
                 i += 1
-            if printedData:
-                jevois.sendSerial('\n')
+            jevois.sendSerial(serialMessage)
             cv2.drawContours(outimg, self.convex_hulls_output, -1, (0,0,255), 3)
             cv2.putText(outimg, "Glitch CubeVision", (3, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
                         
@@ -184,8 +183,9 @@ class PythonSandbox:
             i = 0
             for contour in self.convex_hulls_output:
                 x,y,w,h = cv2.boundingRect(contour)
-                jevois.sendSerial('Object:' + str(i) + '[x:' + str(x + int(w / 2)) + ',y:' + str(y + int(h / 2)) + ',w:' + str(w) + ',h:' + str(h))
+                serialMessage = serialMessage + ('\nObject:' + str(i) + '[x:' + str(x + int(w / 2)) + ',y:' + str(y + int(h / 2)) + ',w:' + str(w) + ',h:' + str(h) + ']')
                 i += 1
+            jevois.sendSerial(serialMessage)
         self.frame += 1
 
     @staticmethod
