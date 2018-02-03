@@ -20,6 +20,7 @@ smax = 255
 lmin = 60
 lmax = 253
 minarea = 2000
+exp = 500
 hslToggle = False
 
 ####################################################################################################
@@ -39,6 +40,18 @@ def send_command(cmd):
 def getVals():
     print ("HOST>> getVals")
     ser.write('getVals\n'.encode())
+    out = ''
+    time.sleep(0.1)
+    while ser.inWaiting() > 0:
+        out += ser.read(1).decode()
+    if out != '':
+        print ("JEVOIS>> " + out), # the final comma suppresses extra newline, since JeVois already sends one
+        return out
+        
+####################################################################################################
+def getExp():
+    print ("HOST>> getcam absexp")
+    ser.write('getcam absexp\n'.encode())
     out = ''
     time.sleep(0.1)
     while ser.inWaiting() > 0:
@@ -95,16 +108,25 @@ def update_min_area(val):
     send_command('setMinArea ' + minarea)
     
 ####################################################################################################
+def update_exp(val):
+    exp = val
+    send_command('setcam absexp ' + exp)
+    
+####################################################################################################
 def save_params():
-    send_command('saveParams' + '')
+    send_command('saveParams ' + str(exp))
     
 ####################################################################################################
 def streamon():
-    send_command('streamon' + '')
+    send_command('streamon')
     
 ####################################################################################################
 def streamoff():
-    send_command('streamoff' + '')
+    send_command('streamoff')
+    
+####################################################################################################
+def send_frames():
+    send_command('sendFrames')
     
 ####################################################################################################
 # Main code
@@ -112,6 +134,8 @@ ser = serial.Serial(serdev, 115200, timeout=1)
 #send_command('ping')                   # should return ALIVE
 
 send_command('hello')
+send_command('stopSendFrames')
+buffer = getVals() #Clear serial buffer
 vals = getVals().split('[')[1].split(',')
 print(vals)
 hmin = float(vals[0])
@@ -121,6 +145,8 @@ smax = float(vals[3])
 lmin = float(vals[4])
 lmax = float(vals[5])
 minarea = float(vals[6])
+exp = int(getExp().split(' ')[1].split('\r')[0])
+#send_command('sendFrames')
 
 master = Tk()
 
@@ -162,15 +188,23 @@ w12.pack()
 
 w11 = Label(master, text = "Min Area")
 w11.pack()
-w12 = Scale(master, from_=1000, to=2000, tickinterval=100, length=600, orient=HORIZONTAL, command=update_min_area)
+w12 = Scale(master, from_=500, to=2000, tickinterval=100, length=600, orient=HORIZONTAL, command=update_min_area)
 w12.set(minarea)
 w12.pack()
 
-w13 = Button(master, text="Save", command=save_params)
+w13 = Label(master, text = "Exposure")
 w13.pack()
-w14 = Button(master, text="Stream on", command=streamon)
+w14 = Scale(master, from_=1, to=1000, tickinterval=100, length=600, orient=HORIZONTAL, command=update_exp)
+w14.set(exp)
 w14.pack()
-w15 = Button(master, text="Stream off", command=streamoff)
+
+w15 = Button(master, text="Save", command=save_params)
 w15.pack()
+w16 = Button(master, text="Stream on", command=streamon)
+w16.pack()
+w17 = Button(master, text="Stream off", command=streamoff)
+w17.pack()
+w17 = Button(master, text="Start sending frames to serial", command=send_frames)
+w17.pack()
 
 mainloop()

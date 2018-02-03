@@ -85,6 +85,7 @@ class PythonSandbox:
                 self.__hsl_threshold_luminance[0] = float(valsInit[4])
                 self.__hsl_threshold_luminance[1] = float(valsInit[5])
                 self.__filter_contours_min_area = float(valsInit[6])
+                #jevois.sendSerial('setcam absexp' + valsInit[7])
             fInit.close()
         except:
             jevois.LINFO("Error loading parameters from file")
@@ -96,6 +97,7 @@ class PythonSandbox:
         self.convex_hulls_output = None
         self.convex_hulls_filled = None
         self.frame = 0
+        self.sendFrames = True
 
         self.__mask_input = self.resize_image_output
         self.__mask_mask = self.hsl_threshold_output
@@ -163,7 +165,8 @@ class PythonSandbox:
                 cv2.putText(outimg, ('x: ' + str(x + int(w / 2)) + ', y: ' + str(y + int(h / 2)) + ', w: ' + str(w) + ', h: ' + str(h)), (3, 288 - textHeight), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
                 textHeight = textHeight + 15
                 i += 1
-            jevois.sendSerial(serialMessage)
+            if self.sendFrames:
+                jevois.sendSerial(serialMessage)
             cv2.drawContours(outimg, self.convex_hulls_output, -1, (0,0,255), 3)
             cv2.putText(outimg, "Glitch CubeVision", (3, 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
                         
@@ -185,7 +188,8 @@ class PythonSandbox:
                 x,y,w,h = cv2.boundingRect(contour)
                 serialMessage = serialMessage + ('\nObject:' + str(i) + '[x:' + str(x + int(w / 2)) + ',y:' + str(y + int(h / 2)) + ',w:' + str(w) + ',h:' + str(h) + ']')
                 i += 1
-            jevois.sendSerial(serialMessage)
+            if self.sendFrames:
+                jevois.sendSerial(serialMessage)
         self.frame += 1
 
     @staticmethod
@@ -331,30 +335,33 @@ class PythonSandbox:
         
     # ###################################################################################################
     ## Parse a serial command forwarded to us by the JeVois Engine, return a string
-    def parseSerial(self, str):
-        jevois.LINFO('parseserial received command [{}]'.format(str))
-        command = str.split(' ', 1)[0]
+    def parseSerial(self, input):
+        jevois.LINFO('parseserial received command [{}]'.format(input))
+        command = input.split(' ', 1)[0]
         if command == 'hello':
             return 'Hi!'
         if command == 'getVals':
             return self.getVals()
-            #return str(self.__hsl_threshold_hue[0])
         if command == 'setHMin':
-            return self.setHMin(str)
+            return self.setHMin(input)
         if command == 'setHMax':
-            return self.setHMax(str)
+            return self.setHMax(input)
         if command == 'setSMin':
-            return self.setSMin(str)
+            return self.setSMin(input)
         if command == 'setSMax':
-            return self.setSMax(str)
-        if command == 'setVMin':
-            return self.setVMin(str)
-        if command == 'setVMax':
-            return self.setVMax(str)
+            return self.setSMax(input)
+        if command == 'setLMin':
+            return self.setLMin(input)
+        if command == 'setLMax':
+            return self.setLMax(input)
         if command == 'setMinArea':
-            return self.setMinArea(str)
+            return self.setMinArea(input)
         if command == 'saveParams':
-            return self.saveParams()
+            return self.saveParams(input)
+        if command == 'stopSendFrames':
+            return self.stopPrintFrames()
+        if command == 'sendFrames':
+            return self.printFrames()
         return 'ERR: Unknown command'
     #http://jevois.org/qa/index.php?qa=527&qa_1=updating-parameters-in-a-python-module-via-serial
     # ###################################################################################################
@@ -370,7 +377,8 @@ class PythonSandbox:
         '\nsetLMin - set minimum luminance' + 
         '\nsetLMax - set maximum luminance' + 
         '\nsetMinArea - set minimum area' + 
-        '\nsaveParams - save current parameters to file')
+        '\nsaveParams - save current parameters to file' + 
+        '\nsendFrames - resume outputting frames to serial')
     
     def getVals(self):
         return ('Hue. . . . . ' + str(self.__hsl_threshold_hue[0]) + ' - ' + str(self.__hsl_threshold_hue[1]) + 
@@ -382,66 +390,76 @@ class PythonSandbox:
         ',' + str(self.__hsl_threshold_luminance[0]) + ',' + str(self.__hsl_threshold_luminance[1]) + 
         ',' + str(self.__filter_contours_min_area) + ', ')
     
-    def setHMin(self, str):
+    def stopPrintFrames(self):
+        self.sendFrames = False
+        return 'Not sending frames'
+    
+    def printFrames(self):
+        self.sendFrames = True
+        return 'Sending frames'
+    
+    def setHMin(self, command):
         arg = ''
-        arg = str.split(' ', 1)[1]
+        arg = command.split(' ')[1]
         if float(arg) < 0:
             return 'ERR: Value too low. Must be at least 0.'
         if float(arg) > self.__hsl_threshold_hue[1]:
             return 'ERR: Value too high. Must be below ' + str(self.__hsl_threshold_hue[1])
         self.__hsl_threshold_hue[0] = float(arg)
         return 'Hue min set to ' + arg
-    def setHMax(self, str):
+    def setHMax(self, command):
         arg = ''
-        arg = str.split(' ', 1)[1]
+        arg = command.split(' ')[1]
         if float(arg) > 255:
             return 'ERR: Value too high. Must be below 255'
         if float(arg) < self.__hsl_threshold_hue[0]:
             return 'ERR: Value too low. Must be greater than ' + str(self.__hsl_threshold_hue[0])
         self.__hsl_threshold_hue[1] = float(arg)
         return 'Hue max set to ' + arg
-    def setSMin(self, str):
+    def setSMin(self, command):
         arg = ''
-        arg = str.split(' ', 1)[1]
+        arg = command.split(' ')[1]
         if float(arg) < 0:
             return 'ERR: Value too low. Must be at least 0.'
         if float(arg) > self.__hsl_threshold_saturation[1]:
             return 'ERR: Value too high. Must be below ' + str(self.__hsl_threshold_saturation[1])
         self.__hsl_threshold_saturation[0] = float(arg)
         return 'Saturation min set to ' + arg
-    def setSMax(self, str):
+    def setSMax(self, command):
         arg = ''
-        arg = str.split(' ', 1)[1]
+        arg = command.split(' ')[1]
         if float(arg) > 255:
             return 'ERR: Value too high. Must be below 255'
         if float(arg) < self.__hsl_threshold_saturation[0]:
             return 'ERR: Value too low. Must be greater than ' + str(self.__hsl_threshold_saturation[0])
         self.__hsl_threshold_saturation[1] = float(arg)
         return 'Saturation max set to ' + arg
-    def setLMin(self, str):
+    def setLMin(self, command):
         arg = ''
-        arg = str.split(' ', 1)[1]
+        arg = command.split(' ')[1]
         if float(arg) < 0:
             return 'ERR: Value too low. Must be at least 0.'
-        if float(arg) > self.__hsl_threshold_value[1]:
+        if float(arg) > self.__hsl_threshold_luminance[1]:
             return 'ERR: Value too high. Must be below ' + str(self.__hsl_threshold_luminance[1])
         self.__hsl_threshold_luminance[0] = float(arg)
         return 'Value min set to ' + arg
-    def setLMax(self, str):
+    def setLMax(self, command):
         arg = ''
-        arg = str.split(' ', 1)[1]
+        arg = command.split(' ')[1]
         if float(arg) > 255:
             return 'ERR: Value too high. Must be below 255'
         if float(arg) < self.__hsl_threshold_luminance[0]:
             return 'ERR: Value too low. Must be greater than ' + str(self.__hsl_threshold_luminance[0])
         self.__hsl_threshold_luminance[1] = float(arg)
         return 'Value max set to ' + arg
-    def setMinArea(self, str):
+    def setMinArea(self, command):
         arg = ''
-        arg = str.split(' ', 1)[1]
+        arg = command.split(' ')[1]
         self.__filter_contours_min_area = float(arg)
         return 'Min area set to ' + arg
-    def saveParams(self):
+    def saveParams(self, command):
+        exp = ''
+        exp = command.split(' ')[1]
         f = open("vals.txt", "w+")
         f.write("h: " + str(self.__hsl_threshold_hue[0]) + "-" + str(self.__hsl_threshold_hue[1]) + "\r\n")
         f.write("s: " + str(self.__hsl_threshold_saturation[0]) + "-" + str(self.__hsl_threshold_saturation[1]) + "\r\n")
@@ -449,7 +467,7 @@ class PythonSandbox:
         f.write("[" + str(self.__hsl_threshold_hue[0]) + "," + str(self.__hsl_threshold_hue[1]) + 
         "," + str(self.__hsl_threshold_saturation[0]) + "," + str(self.__hsl_threshold_saturation[1]) + 
         "," + str(self.__hsl_threshold_luminance[0]) + "," + str(self.__hsl_threshold_luminance[1]) + 
-        "," + str(self.__filter_contours_min_area) + ",\r\n")
+        "," + str(self.__filter_contours_min_area) + "," + exp + ",\r\n")
         f.close()
         return 'Saved parameters'
 
