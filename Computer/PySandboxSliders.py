@@ -21,6 +21,8 @@ lmin = 60
 lmax = 253
 minarea = 2000
 exp = 500
+redbal = 125
+bluebal = 151
 hslToggle = False
 
 ####################################################################################################
@@ -52,6 +54,30 @@ def getVals():
 def getExp():
     print ("HOST>> getcam absexp")
     ser.write('getcam absexp\n'.encode())
+    out = ''
+    time.sleep(0.1)
+    while ser.inWaiting() > 0:
+        out += ser.read(1).decode()
+    if out != '':
+        print ("JEVOIS>> " + out), # the final comma suppresses extra newline, since JeVois already sends one
+        return out
+        
+####################################################################################################
+def getRedBal():
+    print ("HOST>> getcam redbal")
+    ser.write('getcam redbal\n'.encode())
+    out = ''
+    time.sleep(0.1)
+    while ser.inWaiting() > 0:
+        out += ser.read(1).decode()
+    if out != '':
+        print ("JEVOIS>> " + out), # the final comma suppresses extra newline, since JeVois already sends one
+        return out
+        
+####################################################################################################
+def getBlueBal():
+    print ("HOST>> getcam bluebal")
+    ser.write('getcam bluebal\n'.encode())
     out = ''
     time.sleep(0.1)
     while ser.inWaiting() > 0:
@@ -113,6 +139,16 @@ def update_exp(val):
     send_command('setcam absexp ' + exp)
     
 ####################################################################################################
+def update_redbal(val):
+    redbal = val
+    send_command('setcam redbal ' + redbal)
+    
+####################################################################################################
+def update_bluebal(val):
+    bluebal = val
+    send_command('setcam bluebal ' + bluebal)
+    
+####################################################################################################
 def save_params():
     send_command('saveParams ' + str(exp))
     
@@ -146,9 +182,12 @@ lmin = float(vals[4])
 lmax = float(vals[5])
 minarea = float(vals[6])
 exp = int(getExp().split(' ')[1].split('\r')[0])
+redbal = int(getRedBal().split(' ')[1].split('\r')[0])
+bluebal = int(getBlueBal().split(' ')[1].split('\r')[0])
 #send_command('sendFrames')
 
 master = Tk()
+second = Tk()
 
 w1 = Label(master, text = "Hue min")
 w1.pack()
@@ -186,25 +225,37 @@ w12 = Scale(master, from_=0, to=255, tickinterval=15, length=600, orient=HORIZON
 w12.set(lmax)
 w12.pack()
 
-w11 = Label(master, text = "Min Area")
+w11 = Label(second, text = "Min Area")
 w11.pack()
-w12 = Scale(master, from_=500, to=2000, tickinterval=100, length=600, orient=HORIZONTAL, command=update_min_area)
+w12 = Scale(second, from_=500, to=2000, tickinterval=100, length=600, orient=HORIZONTAL, command=update_min_area)
 w12.set(minarea)
 w12.pack()
 
-w13 = Label(master, text = "Exposure")
+w13 = Label(second, text = "Exposure")
 w13.pack()
-w14 = Scale(master, from_=1, to=1000, tickinterval=100, length=600, orient=HORIZONTAL, command=update_exp)
+w14 = Scale(second, from_=1, to=1000, tickinterval=100, length=600, orient=HORIZONTAL, command=update_exp)
 w14.set(exp)
 w14.pack()
 
-w15 = Button(master, text="Save", command=save_params)
+w15 = Label(second, text = "Redbal")
 w15.pack()
-w16 = Button(master, text="Stream on", command=streamon)
+w16 = Scale(second, from_=0, to=255, tickinterval=15, length=600, orient=HORIZONTAL, command=update_redbal)
+w16.set(redbal)
 w16.pack()
-w17 = Button(master, text="Stream off", command=streamoff)
+
+w17 = Label(second, text = "Bluebal")
 w17.pack()
-w17 = Button(master, text="Start sending frames to serial", command=send_frames)
-w17.pack()
+w18 = Scale(second, from_=0, to=255, tickinterval=15, length=600, orient=HORIZONTAL, command=update_bluebal)
+w18.set(bluebal)
+w18.pack()
+
+w19 = Button(second, text="Save", command=save_params)
+w19.pack()
+w20 = Button(second, text="Stream on", command=streamon)
+w20.pack()
+w21 = Button(second, text="Stream off", command=streamoff)
+w21.pack()
+w22 = Button(second, text="Start sending frames to serial", command=send_frames)
+w22.pack()
 
 mainloop()

@@ -85,7 +85,6 @@ class PythonSandbox:
                 self.__hsl_threshold_luminance[0] = float(valsInit[4])
                 self.__hsl_threshold_luminance[1] = float(valsInit[5])
                 self.__filter_contours_min_area = float(valsInit[6])
-                #jevois.sendSerial('setcam absexp' + valsInit[7])
             fInit.close()
         except:
             jevois.LINFO("Error loading parameters from file")
@@ -103,6 +102,23 @@ class PythonSandbox:
         self.__mask_mask = self.hsl_threshold_output
 
         self.mask_output = None
+        
+        self.momentAvg = [0.171877167,0.002900258788,3.97E-05,2.71E-06,3.38E-10,2.16E-07,3.79E-11]
+        self.stdv = [0.01501932812,0.006138597897,0.0001147442133,0.00001223416618,0.000000003403410003,0.000001767205694,0.0000000009515363047]
+        
+        self.covarianceMtrx = [[self.stdv[0]*self.stdv[0],0,0,0,0,0,0],
+            [0,self.stdv[1]*self.stdv[1],0,0,0,0,0],
+            [0,0,self.stdv[2]*self.stdv[2],0,0,0,0],
+            [0,0,0,self.stdv[3]*self.stdv[3],0,0,0],
+            [0,0,0,0,self.stdv[4]*self.stdv[4],0,0],
+            [0,0,0,0,0,self.stdv[5]*self.stdv[5],0],
+            [0,0,0,0,0,0,self.stdv[6]*self.stdv[6]]]
+        
+        #self.covarMtrx = []
+        #self.invCovarMtrx = cv2.invert(cv2.calcCovarMatrix(self.stdv), DECOMP_SVD)
+        
+        self.invCovarMtrx = np.linalg.inv(self.covarianceMtrx)
+        
         jevois.LINFO("END CONSTRUCTOR")
     ## Process function with USB output
     def process(self, inframe, outframe = None):
@@ -145,10 +161,22 @@ class PythonSandbox:
         self.__convex_hulls_contours = self.filter_contours_output
         (self.convex_hulls_output) = self.__convex_hulls(self.__convex_hulls_contours)
         
+        
         fps = self.timer.stop()
         numobjects = 0
-        for true in self.convex_hulls_output:
+        
+        M = []
+        
+        #f = open("moments.txt", "a+")
+        for contour in self.convex_hulls_output:
+            #M.append(cv2.moments(contour))
+            M.append(cv2.HuMoments(cv2.moments(contour)).flatten())
+            #jevois.sendSerial(str(M[numobjects]))
+            #for outputVal in M[numobjects]:
+                #f.write(str(outputVal) + ', ')
+            #f.write('\n')
             numobjects += 1
+        #f.close()
         serialMessage = ('Frame:' + str(self.frame) + str(self.frame) + ', Process Time:' + str(fps) + ', Objects:' + str(numobjects) + '=')
         if outframe is not None:
             outimg = self.bgr_input
@@ -161,7 +189,8 @@ class PythonSandbox:
                 x,y,w,h = cv2.boundingRect(contour)
                 cv2.circle(outimg, (x + int(w / 2), y + int(h / 2)), 3, (255, 0, 0), 5)
                 cv2.rectangle(outimg, (x, y), (x + w, y + h), (0, 255, 0), 3) 
-                serialMessage = serialMessage + ('\nObject:' + str(i) + '[x:' + (str(x + int(w / 2)) + ',y:' + str(y + int(h / 2)) + ',w:' + str(w) + ',h:' + str(h) + ']'))
+                mahalanobisVal = cv2.Mahalanobis(np.array(M[i]), np.array(self.momentAvg), np.array(self.invCovarMtrx))
+                serialMessage = serialMessage + ('\nObject:' + str(i) + '[x:' + (str(x + int(w / 2)) + ',y:' + str(y + int(h / 2)) + ',w:' + str(w) + ',h:' + str(h) + ',m:' + str(mahalanobisVal) + ']'))
                 cv2.putText(outimg, ('x: ' + str(x + int(w / 2)) + ', y: ' + str(y + int(h / 2)) + ', w: ' + str(w) + ', h: ' + str(h)), (3, 288 - textHeight), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255,255,255), 1, cv2.LINE_AA)
                 textHeight = textHeight + 15
                 i += 1
@@ -186,7 +215,8 @@ class PythonSandbox:
             i = 0
             for contour in self.convex_hulls_output:
                 x,y,w,h = cv2.boundingRect(contour)
-                serialMessage = serialMessage + ('\nObject:' + str(i) + '[x:' + str(x + int(w / 2)) + ',y:' + str(y + int(h / 2)) + ',w:' + str(w) + ',h:' + str(h) + ']')
+                mahalanobisVal = cv2.Mahalanobis(np.array(M[i]), np.array(self.momentAvg), np.array(self.invCovarMtrx))
+                serialMessage = serialMessage + ('\nObject:' + str(i) + '[x:' + str(x + int(w / 2)) + ',y:' + str(y + int(h / 2)) + ',w:' + str(w) + ',h:' + str(h) + ',m:' + str(mahalanobisVal) + ']')
                 i += 1
             if self.sendFrames:
                 jevois.sendSerial(serialMessage)
