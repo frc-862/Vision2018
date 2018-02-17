@@ -26,13 +26,13 @@
       <grip:Input step="1" socket="2">
         <value>1.8867924528301883</value>
       </grip:Input>
-      <grip:Output step="1" socket="0" previewed="true"/>
+      <grip:Output step="1" socket="0" previewed="false"/>
     </grip:Step>
     <grip:Step name="HSL Threshold">
       <grip:Input step="2" socket="0"/>
       <grip:Input step="2" socket="1">
         <value>
-          <double>33.89830508474575</double>
+          <double>32.203389830508456</double>
           <double>45.240641711229955</double>
         </value>
       </grip:Input>
@@ -61,7 +61,7 @@
         <value>BORDER_CONSTANT</value>
       </grip:Input>
       <grip:Input step="3" socket="5"/>
-      <grip:Output step="3" socket="0" previewed="true"/>
+      <grip:Output step="3" socket="0" previewed="false"/>
     </grip:Step>
     <grip:Step name="CV dilate">
       <grip:Input step="4" socket="0"/>
@@ -74,7 +74,7 @@
         <value>BORDER_CONSTANT</value>
       </grip:Input>
       <grip:Input step="4" socket="5"/>
-      <grip:Output step="4" socket="0" previewed="true"/>
+      <grip:Output step="4" socket="0" previewed="false"/>
     </grip:Step>
     <grip:Step name="CV erode">
       <grip:Input step="5" socket="0"/>
@@ -87,14 +87,14 @@
         <value>BORDER_CONSTANT</value>
       </grip:Input>
       <grip:Input step="5" socket="5"/>
-      <grip:Output step="5" socket="0" previewed="true"/>
+      <grip:Output step="5" socket="0" previewed="false"/>
     </grip:Step>
     <grip:Step name="Find Contours">
       <grip:Input step="6" socket="0"/>
       <grip:Input step="6" socket="1">
         <value>false</value>
       </grip:Input>
-      <grip:Output step="6" socket="0" previewed="true"/>
+      <grip:Output step="6" socket="0" previewed="false"/>
     </grip:Step>
     <grip:Step name="Filter Contours">
       <grip:Input step="7" socket="0"/>
@@ -147,36 +147,36 @@
       <grip:Input step="1" socket="0"/>
     </grip:Connection>
     <grip:Connection>
-      <grip:Output step="2" socket="0" previewed="true"/>
-      <grip:Input step="3" socket="0"/>
-    </grip:Connection>
-    <grip:Connection>
-      <grip:Output step="4" socket="0" previewed="true"/>
-      <grip:Input step="5" socket="0"/>
-    </grip:Connection>
-    <grip:Connection>
       <grip:Output step="7" socket="0" previewed="false"/>
       <grip:Input step="8" socket="0"/>
     </grip:Connection>
     <grip:Connection>
-      <grip:Output step="1" socket="0" previewed="true"/>
-      <grip:Input step="2" socket="0"/>
+      <grip:Output step="6" socket="0" previewed="false"/>
+      <grip:Input step="7" socket="0"/>
     </grip:Connection>
     <grip:Connection>
-      <grip:Output step="6" socket="0" previewed="true"/>
-      <grip:Input step="7" socket="0"/>
+      <grip:Output step="5" socket="0" previewed="false"/>
+      <grip:Input step="6" socket="0"/>
+    </grip:Connection>
+    <grip:Connection>
+      <grip:Output step="2" socket="0" previewed="true"/>
+      <grip:Input step="3" socket="0"/>
+    </grip:Connection>
+    <grip:Connection>
+      <grip:Output step="4" socket="0" previewed="false"/>
+      <grip:Input step="5" socket="0"/>
+    </grip:Connection>
+    <grip:Connection>
+      <grip:Output step="3" socket="0" previewed="false"/>
+      <grip:Input step="4" socket="0"/>
     </grip:Connection>
     <grip:Connection>
       <grip:Output source="0" socket="0" previewed="true"/>
       <grip:Input step="0" socket="0"/>
     </grip:Connection>
     <grip:Connection>
-      <grip:Output step="3" socket="0" previewed="true"/>
-      <grip:Input step="4" socket="0"/>
-    </grip:Connection>
-    <grip:Connection>
-      <grip:Output step="5" socket="0" previewed="true"/>
-      <grip:Input step="6" socket="0"/>
+      <grip:Output step="1" socket="0" previewed="false"/>
+      <grip:Input step="2" socket="0"/>
     </grip:Connection>
   </connections>
   <settings>
@@ -190,10 +190,10 @@
   </settings>
   <codeGenerationSettings>
     <language>Python</language>
-    <className>CubeVision</className>
+    <className>CubeVisionFour</className>
     <implementWpilibPipeline>false</implementWpilibPipeline>
     <saveDir>C:\Users\Lightning\GRIP</saveDir>
     <packageName></packageName>
-    <moduleName>cubevision</moduleName>
+    <moduleName>cubevisionfour</moduleName>
   </codeGenerationSettings>
 </grip:Pipeline>

@@ -16,46 +16,52 @@ class PythonSandbox:
         """initializes all values to presets or None if need to be set
         """
         
-        self.__resize_image_width = 352.0
-        self.__resize_image_height = 288.0
-        self.__resize_image_interpolation = cv2.INTER_CUBIC
-
-        self.resize_image_output = None
-
-        self.__blur_input = self.resize_image_output
+        
+        
+        self.__blur_input = None
         self.__blur_type = BlurType.Gaussian_Blur
-        self.__blur_radius = 1.8018018018018018
+        self.__blur_radius = 1.8867924528301883
 
         self.blur_output = None
 
         self.__hsl_threshold_input = self.blur_output
         
         #Original values
-        self.__hsl_threshold_hue = [28.8135593220339, 35.586877323768235]
-        self.__hsl_threshold_saturation = [129.1728019883664, 255.0]
-        self.__hsl_threshold_luminance = [30, 255]
+        self.__hsl_threshold_input = self.blur_output
+        self.__hsl_threshold_hue = [32.203389830508456, 45.240641711229955]
+        self.__hsl_threshold_saturation = [60.02824858757062, 255.0]
+        self.__hsl_threshold_luminance = [14.406779661016945, 243.63636363636363]
 
         self.hsl_threshold_output = None
 
-        self.__cv_dilate_src = self.hsl_threshold_output
+        self.__cv_erode_0_src = self.hsl_threshold_output
+        self.__cv_erode_0_kernel = None
+        self.__cv_erode_0_anchor = (-1, -1)
+        self.__cv_erode_0_iterations = 3.0
+        self.__cv_erode_0_bordertype = cv2.BORDER_CONSTANT
+        self.__cv_erode_0_bordervalue = (-1)
+
+        self.cv_erode_0_output = None
+
+        self.__cv_dilate_src = self.cv_erode_0_output
         self.__cv_dilate_kernel = None
         self.__cv_dilate_anchor = (-1, -1)
-        self.__cv_dilate_iterations = 2.0
+        self.__cv_dilate_iterations = 5.0
         self.__cv_dilate_bordertype = cv2.BORDER_CONSTANT
         self.__cv_dilate_bordervalue = (-1)
 
         self.cv_dilate_output = None
 
-        self.__cv_erode_src = self.cv_dilate_output
-        self.__cv_erode_kernel = None
-        self.__cv_erode_anchor = (-1, -1)
-        self.__cv_erode_iterations = 6.0
-        self.__cv_erode_bordertype = cv2.BORDER_CONSTANT
-        self.__cv_erode_bordervalue = (-1)
+        self.__cv_erode_1_src = self.cv_dilate_output
+        self.__cv_erode_1_kernel = None
+        self.__cv_erode_1_anchor = (-1, -1)
+        self.__cv_erode_1_iterations = 2.0
+        self.__cv_erode_1_bordertype = cv2.BORDER_CONSTANT
+        self.__cv_erode_1_bordervalue = (-1)
 
-        self.cv_erode_output = None
+        self.cv_erode_1_output = None
 
-        self.__find_contours_input = self.cv_erode_output
+        self.__find_contours_input = self.cv_erode_1_output
         self.__find_contours_external_only = False
 
         self.find_contours_output = None
@@ -67,7 +73,7 @@ class PythonSandbox:
         self.__filter_contours_max_width = 1.0E16
         self.__filter_contours_min_height = 0.0
         self.__filter_contours_max_height = 1.0E21
-        self.__filter_contours_solidity = [55.5187429004165, 100]
+        self.__filter_contours_solidity = [84.74576271186443, 100]
         self.__filter_contours_max_vertices = 1000000.0
         self.__filter_contours_min_vertices = 0.0
         self.__filter_contours_min_ratio = 0.0
@@ -97,11 +103,6 @@ class PythonSandbox:
         self.convex_hulls_filled = None
         self.frame = 0
         self.sendFrames = True
-
-        self.__mask_input = self.resize_image_output
-        self.__mask_mask = self.hsl_threshold_output
-
-        self.mask_output = None
         
         self.momentAvg = [0.171877167,0.002900258788,3.97E-05,2.71E-06,3.38E-10,2.16E-07,3.79E-11]
         self.stdv = [0.01501932812,0.006138597897,0.0001147442133,0.00001223416618,0.000000003403410003,0.000001767205694,0.0000000009515363047]
@@ -141,16 +142,20 @@ class PythonSandbox:
         self.__hsl_threshold_input = self.blur_output
         (self.hsl_threshold_output) = self.__hsl_threshold(self.__hsl_threshold_input, self.__hsl_threshold_hue, self.__hsl_threshold_saturation, self.__hsl_threshold_luminance)
 
+        # Step CV_erode0:
+        self.__cv_erode_0_src = self.hsl_threshold_output
+        (self.cv_erode_0_output) = self.__cv_erode(self.__cv_erode_0_src, self.__cv_erode_0_kernel, self.__cv_erode_0_anchor, self.__cv_erode_0_iterations, self.__cv_erode_0_bordertype, self.__cv_erode_0_bordervalue)
+
         # Step CV_dilate0:
-        self.__cv_dilate_src = self.hsl_threshold_output
+        self.__cv_dilate_src = self.cv_erode_0_output
         (self.cv_dilate_output) = self.__cv_dilate(self.__cv_dilate_src, self.__cv_dilate_kernel, self.__cv_dilate_anchor, self.__cv_dilate_iterations, self.__cv_dilate_bordertype, self.__cv_dilate_bordervalue)
 
-        # Step CV_erode0:
-        self.__cv_erode_src = self.cv_dilate_output
-        (self.cv_erode_output) = self.__cv_erode(self.__cv_erode_src, self.__cv_erode_kernel, self.__cv_erode_anchor, self.__cv_erode_iterations, self.__cv_erode_bordertype, self.__cv_erode_bordervalue)
+        # Step CV_erode1:
+        self.__cv_erode_1_src = self.cv_dilate_output
+        (self.cv_erode_1_output) = self.__cv_erode(self.__cv_erode_1_src, self.__cv_erode_1_kernel, self.__cv_erode_1_anchor, self.__cv_erode_1_iterations, self.__cv_erode_1_bordertype, self.__cv_erode_1_bordervalue)
 
         # Step Find_Contours0:
-        self.__find_contours_input = self.cv_erode_output
+        self.__find_contours_input = self.cv_erode_1_output
         (self.find_contours_output) = self.__find_contours(self.__find_contours_input, self.__find_contours_external_only)
 
         # Step Filter_Contours0:
@@ -362,6 +367,8 @@ class PythonSandbox:
         for contour in input_contours:
             output.append(cv2.convexHull(contour))
         return output
+
+
         
     # ###################################################################################################
     ## Parse a serial command forwarded to us by the JeVois Engine, return a string
@@ -411,6 +418,9 @@ class PythonSandbox:
         '\nsendFrames - resume outputting frames to serial')
     
     def getVals(self):
+        fGetExp = open('vals.txt', 'r')
+        exp = fGetExp.read().split('[')[1].split(',')[7]
+        fGetExp.close()
         return ('Hue. . . . . ' + str(self.__hsl_threshold_hue[0]) + ' - ' + str(self.__hsl_threshold_hue[1]) + 
         '\nSaturation . ' + str(self.__hsl_threshold_saturation[0]) + ' - ' + str(self.__hsl_threshold_saturation[1]) + 
         '\nLuminance. . ' + str(self.__hsl_threshold_luminance[0]) + ' - ' + str(self.__hsl_threshold_luminance[1]) + 
@@ -418,7 +428,8 @@ class PythonSandbox:
         '\n[' + str(self.__hsl_threshold_hue[0]) + ',' + str(self.__hsl_threshold_hue[1]) + 
         ',' + str(self.__hsl_threshold_saturation[0]) + ',' + str(self.__hsl_threshold_saturation[1]) + 
         ',' + str(self.__hsl_threshold_luminance[0]) + ',' + str(self.__hsl_threshold_luminance[1]) + 
-        ',' + str(self.__filter_contours_min_area) + ', ')
+        ',' + str(self.__filter_contours_min_area) + 
+        ',' + exp + ', ')
     
     def stopPrintFrames(self):
         self.sendFrames = False
@@ -490,6 +501,8 @@ class PythonSandbox:
     def saveParams(self, command):
         exp = ''
         exp = command.split(' ')[1]
+        redbal = command.split(' ')[2]
+        bluebal = command.split(' ')[3]
         f = open("vals.txt", "w+")
         f.write("h: " + str(self.__hsl_threshold_hue[0]) + "-" + str(self.__hsl_threshold_hue[1]) + "\r\n")
         f.write("s: " + str(self.__hsl_threshold_saturation[0]) + "-" + str(self.__hsl_threshold_saturation[1]) + "\r\n")
@@ -499,7 +512,29 @@ class PythonSandbox:
         "," + str(self.__hsl_threshold_luminance[0]) + "," + str(self.__hsl_threshold_luminance[1]) + 
         "," + str(self.__filter_contours_min_area) + "," + exp + ",\r\n")
         f.close()
+        fParams = open('/jevois/config/initscript.cfg', 'w+')
+        fParams.write('# JeVois initialization script\r\n')
+        fParams.write('#\r\n')
+        fParams.write('# This script is run upon statup of the JeVois main engine. You can here specify commands (like you would type them to\r\n')
+        fParams.write('# the JeVois command-line interface) to execute upon startup, even before a module is loaded.\r\n')
+        fParams.write('\r\n')
+        fParams.write('# Example: load the SaveVideo with no USB out module (check its mapping index, it was 0 at the time of writing this),\r\n')
+        fParams.write('# start streaming, and start saving:\r\n')
+        fParams.write('setmapping2 YUYV 352 288 30.0 JeVois PythonSandbox\r\n')
+        fParams.write('#setpar serlog Hard\r\n')
+        fParams.write('#setpar serout Hard\r\n')
+        fParams.write('#setpar serlog USB\r\n')
+        fParams.write('setpar serout USB\r\n')
+        fParams.write('setcam autowb 0\r\n')
+        fParams.write('setcam autoexp 1\r\n')
+        fParams.write('setcam absexp ' + exp + '\r\n')
+        fParams.write('setcam redbal ' + redbal + '\r\n')
+        fParams.write('setcam bluebal ' + bluebal + '\r\n')
+        fParams.write('\r\n')
+        fParams.write('#streamon\r\n')
+        fParams.write('\r\n')
+        fParams.write('#start\r\n')
+        fParams.close()
         return 'Saved parameters'
-
 
 BlurType = Enum('BlurType', 'Box_Blur Gaussian_Blur Median_Filter Bilateral_Filter')

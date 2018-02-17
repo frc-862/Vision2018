@@ -130,27 +130,35 @@ def update_lmax(val):
     
 ####################################################################################################
 def update_min_area(val):
+    global minarea
     minarea = val
     send_command('setMinArea ' + minarea)
     
 ####################################################################################################
 def update_exp(val):
+    global exp
     exp = val
     send_command('setcam absexp ' + exp)
+    print(exp)
     
 ####################################################################################################
 def update_redbal(val):
+    global redbal
     redbal = val
     send_command('setcam redbal ' + redbal)
     
 ####################################################################################################
 def update_bluebal(val):
+    global bluebal
     bluebal = val
     send_command('setcam bluebal ' + bluebal)
     
 ####################################################################################################
 def save_params():
-    send_command('saveParams ' + str(exp))
+    global exp
+    global redbal
+    global bluebal
+    send_command('saveParams ' + str(exp) + ' ' + str(redbal) + ' ' + str(bluebal))
     
 ####################################################################################################
 def streamon():
@@ -181,7 +189,8 @@ smax = float(vals[3])
 lmin = float(vals[4])
 lmax = float(vals[5])
 minarea = float(vals[6])
-exp = int(getExp().split(' ')[1].split('\r')[0])
+exp = int(vals[7])
+print(getExp())
 redbal = int(getRedBal().split(' ')[1].split('\r')[0])
 bluebal = int(getBlueBal().split(' ')[1].split('\r')[0])
 #send_command('sendFrames')
