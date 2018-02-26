@@ -5,12 +5,19 @@
 # This tutorial is a simple program that allows one to adjust the hue, saturation, and value ranges of the ObjectTracker
 # module using sliders
 
-serdev = input("What port: ") # serial device of JeVois
+#serdev = input("What port: ") # serial device of JeVois
 
 from tkinter import *
 import serial
 import time
+import sys
 
+serdev = None
+
+try:
+    serdev = sys.argv[1]
+except:
+    serdev = input("What port: ") # serial device of JeVois
 
 # default values for Hue, Saturation, and Value ranges:
 hmin = 95
@@ -173,6 +180,14 @@ def send_frames():
     send_command('sendFrames')
     
 ####################################################################################################
+def switchOutputHSL():
+    send_command('showHSL')
+    
+####################################################################################################
+def switchOutputContour():
+    send_command('showContour')
+    
+####################################################################################################+
 # Main code
 ser = serial.Serial(serdev, 115200, timeout=1)
 #send_command('ping')                   # should return ALIVE
@@ -233,6 +248,11 @@ w11.pack()
 w12 = Scale(master, from_=0, to=255, tickinterval=15, length=600, orient=HORIZONTAL, command=update_lmax)
 w12.set(lmax)
 w12.pack()
+
+w23 = Button(master, text="Show HSL output", command=switchOutputHSL)
+w23.pack()
+w23 = Button(master, text="Show contour output", command=switchOutputContour)
+w23.pack()
 
 w11 = Label(second, text = "Min Area")
 w11.pack()

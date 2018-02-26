@@ -104,6 +104,8 @@ class PythonSandbox:
         self.frame = 0
         self.sendFrames = True
         
+        self.displayHSLOutput = False
+        
         self.momentAvg = [0.171877167,0.002900258788,3.97E-05,2.71E-06,3.38E-10,2.16E-07,3.79E-11]
         self.stdv = [0.01501932812,0.006138597897,0.0001147442133,0.00001223416618,0.000000003403410003,0.000001767205694,0.0000000009515363047]
         
@@ -214,7 +216,11 @@ class PythonSandbox:
             # Convert our BGR output image to video output format and send to host over USB. If your output image is not
             # BGR, you can use sendCvGRAY(), sendCvRGB(), or sendCvRGBA() as appropriate:
             
-            outframe.sendCvBGR(outimg)
+            if self.displayHSLOutput:
+                
+                outframe.sendCvBGR(cv2.cvtColor(self.hsl_threshold_output,cv2.COLOR_GRAY2BGR))
+            else:
+                outframe.sendCvBGR(outimg)
         
         else:
             i = 0
@@ -399,6 +405,12 @@ class PythonSandbox:
             return self.stopPrintFrames()
         if command == 'sendFrames':
             return self.printFrames()
+        if command == 'showHSL':
+            self.displayHSLOutput = True;
+            return 'Showing HSL output'
+        if command == 'showContour':
+            self.displayHSLOutput = False;
+            return 'Showing contour output'
         return 'ERR: Unknown command'
     #http://jevois.org/qa/index.php?qa=527&qa_1=updating-parameters-in-a-python-module-via-serial
     # ###################################################################################################
