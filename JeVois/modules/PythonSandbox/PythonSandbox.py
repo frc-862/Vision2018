@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 import math
 import time
+import os
 from enum import Enum
 
 class PythonSandbox:
@@ -126,6 +127,8 @@ class PythonSandbox:
         
         self.recordVideo = False
         self.videoWriter = None
+        self.rawVideoWriter = None
+        self.hslVideoWriter = None
         
         jevois.LINFO("END CONSTRUCTOR")
     ## Process function with USB output
@@ -191,11 +194,23 @@ class PythonSandbox:
         #f.close()
         serialMessage = ('Frame:' + str(self.frame) + str(self.frame) + ', Process Time:' + str(fps) + ', Objects:' + str(numobjects) + '=')
         if self.recordVideo is False and self.videoWriter is not None:
+            #jevois.sendSerial('releasing video')
             self.videoWriter.release()
             self.videoWriter = None
+            self.rawVideoWriter.release()
+            self.rawVideoWriter = None
+            self.hslVideoWriter.release()
+            self.hslVideoWriter = None
         if outframe is not None or self.recordVideo is True:
             if self.recordVideo is True and self.videoWriter is None:
-                self.videoWriter = cv2.VideoWriter('videos/' + str(time.time()), cv2.VideoWriter_fourcc('P','I','M','1'), 30, (352, 288))
+                timestamp = str(time.time())
+                os.makedirs('videos/' + timestamp)
+                self.videoWriter = cv2.VideoWriter('videos/' + timestamp + '/processed.avi', cv2.VideoWriter_fourcc(*'XVID'), 22.0, (352, 288))
+                self.rawVideoWriter = cv2.VideoWriter('videos/' + timestamp + '/raw.avi', cv2.VideoWriter_fourcc(*'XVID'), 22.0, (352, 288))
+                self.hslVideoWriter = cv2.VideoWriter('videos/' + timestamp + '/hsl.avi', cv2.VideoWriter_fourcc(*'XVID'), 22.0, (352, 288))
+                #jevois.sendSerial(str(self.videoWriter.isOpened()))
+            if self.recordVideo is True:
+                self.rawVideoWriter.write(self.bgr_input)
             outimg = self.bgr_input
             
             printedData = False
@@ -233,11 +248,8 @@ class PythonSandbox:
                 else:
                     outframe.sendCvBGR(outimg)
             if self.recordVideo is True:
-                if self.displayHSLOutput:
-                    
-                    self.videoWriter.write(cv2.cvtColor(self.hsl_threshold_output,cv2.COLOR_GRAY2BGR))
-                else:
-                    self.videoWriter.write(outimg)
+                self.videoWriter.write(outimg)
+                self.hslVideoWriter.write(cv2.cvtColor(self.hsl_threshold_output,cv2.COLOR_GRAY2BGR))
         
         else:
             i = 0
